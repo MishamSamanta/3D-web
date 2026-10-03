@@ -55,6 +55,9 @@ const GLTFLoaderInner: React.FC<GarmentModelProps> = ({ modelPath, activeColor, 
     if (!sceneClone) return;
 
     const targetColor = new THREE.Color(activeColor.hex);
+    const secondaryColor = targetColor.clone().offsetHSL(0, 0, -0.06);
+    const accentColor = new THREE.Color(activeColor.accentHex || '#d4ff00');
+
     sceneClone.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
@@ -63,14 +66,28 @@ const GLTFLoaderInner: React.FC<GarmentModelProps> = ({ modelPath, activeColor, 
 
         if (mesh.material) {
           const mat = mesh.material as THREE.MeshStandardMaterial;
-          // Apply active color to fabric material or default material
-          if (mat.name === 'FabricMaterial' || (!mat.name.includes('Accent') && !mat.name.includes('Ribbed'))) {
+
+          if (mat.name === 'FabricMaterial') {
             mat.color.copy(targetColor);
-            mat.roughness = 0.85;
+            mat.roughness = 0.78;
             mat.needsUpdate = true;
-          }
-          if (mat.name === 'AccentMaterial' && activeColor.accentHex) {
-            mat.color.set(activeColor.accentHex);
+          } else if (mat.name === 'SecondaryFabric') {
+            mat.color.copy(secondaryColor);
+            mat.roughness = 0.68;
+            mat.needsUpdate = true;
+          } else if (mat.name === 'NeonPiping' || mat.name === 'AccentMaterial') {
+            mat.color.copy(accentColor);
+            mat.emissive.copy(accentColor);
+            mat.emissiveIntensity = 2.0;
+            mat.needsUpdate = true;
+          } else if (mat.name === 'HardwareMaterial') {
+            mat.color.set(0x1e2025);
+            mat.metalness = 0.92;
+            mat.roughness = 0.28;
+            mat.needsUpdate = true;
+          } else if (mat.name === 'WebbingMaterial') {
+            mat.color.set(0x0c0d10);
+            mat.roughness = 0.88;
             mat.needsUpdate = true;
           }
         }
