@@ -56,11 +56,11 @@ export const ProductPanelSection: React.FC = () => {
   return (
     <section
       id="product-panel-section"
-      className="relative min-h-screen w-full flex items-center justify-end px-4 sm:px-12 py-20 pointer-events-none"
+      className="relative min-h-[100svh] w-full flex flex-col justify-end lg:justify-center items-center lg:items-end px-4 sm:px-12 pt-56 pb-16 sm:py-20 pointer-events-none"
     >
       {/* 3D Perspective Unfolding Card */}
       <div className="w-full max-w-lg pointer-events-auto perspective-1000">
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 shadow-glass transform-style-3d transition-transform duration-500 hover:rotate-y-1">
+        <div className="glass-panel p-5 sm:p-8 rounded-3xl border border-white/10 shadow-glass transform-style-3d transition-transform duration-500 hover:rotate-y-1">
           {/* Top Badges */}
           <div className="flex items-center justify-between mb-4">
             <span className="px-3 py-1 rounded-full bg-cyberLime/10 border border-cyberLime/30 font-mono text-[11px] font-semibold text-cyberLime uppercase tracking-wider">

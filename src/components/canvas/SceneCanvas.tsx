@@ -1,4 +1,4 @@
-import React, { useRef, Suspense, useMemo, useEffect } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, ContactShadows, Float, OrbitControls, Preload } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
@@ -7,7 +7,6 @@ import { GarmentModel } from './GarmentModel';
 import { CollectionCarousel3D } from './CollectionCarousel3D';
 import { useScene } from '../../context/SceneContext';
 
-// Mouse parallax tilt & smooth camera interpolation
 interface SceneRigProps {
   scrollProgress: number;
 }
@@ -34,74 +33,99 @@ const FloatingShard: React.FC<{ position: [number, number, number]; rotationSpee
 };
 
 const SceneRig: React.FC<SceneRigProps> = ({ scrollProgress }) => {
-  const { camera, pointer } = useThree();
+  const { camera, pointer, size } = useThree();
   const { activeProduct, activeColor, isInspectMode, isMobile } = useScene();
   const heroGroupRef = useRef<THREE.Group>(null);
-  const detailGroupRef = useRef<THREE.Group>(null);
 
-  // Targets for camera position and lookAt based on scroll progress (0 to 1)
+  // Dynamic aspect ratio calculation
+  const aspect = size.width / Math.max(size.height, 1);
+  const isPortrait = aspect < 1 || isMobile;
+
+  // Responsive camera distance multiplier:
+  // On desktop 16:9 (aspect ~1.77), distanceMult is 1.0.
+  // On mobile portrait (aspect ~0.45), distanceMult scales up to ~1.85 so the garment fits with comfortable padding.
+  const distanceMult = isPortrait ? Math.min(Math.max(1 / (aspect * 1.12), 1.6), 2.2) : 1;
+
   useFrame((_, delta) => {
-    const factor = Math.min(delta * 4, 1);
+    const factor = Math.min(delta * 4.5, 1);
 
-    // Default target camera position
-    let targetCamPos = new THREE.Vector3(0, 0, 4.4);
+    // Target vectors
+    let targetCamPos = new THREE.Vector3(0, 0, 4.4 * distanceMult);
     let targetLookAt = new THREE.Vector3(0, 0, 0);
 
     // Hero garment transforms
-    let heroPos = new THREE.Vector3(0, 0, 0);
-    let heroScale = 1;
+    let heroPos = new THREE.Vector3(0, isPortrait ? 0.35 : 0, 0);
+    let heroScale = isPortrait ? 0.82 : 1;
     let heroRotY = 0;
 
     // Stage 1: Hero (0 - 0.15)
     if (scrollProgress < 0.15) {
-      targetCamPos.set(0, 0, 4.4);
-      targetLookAt.set(0, 0, 0);
-      heroPos.set(0, 0, 0);
-      heroScale = 1;
-      // Gentle mouse parallax tilt
-      heroRotY = pointer.x * 0.25;
+      targetCamPos.set(0, isPortrait ? 0.2 : 0, 4.4 * distanceMult);
+      targetLookAt.set(0, isPortrait ? 0.2 : 0, 0);
+      heroPos.set(0, isPortrait ? 0.35 : 0, 0);
+      heroScale = isPortrait ? 0.82 : 1;
+      heroRotY = pointer.x * (isPortrait ? 0.12 : 0.25);
     }
     // Stage 2: Zoom-in Dolly (0.15 - 0.32)
     else if (scrollProgress < 0.32) {
       const p = (scrollProgress - 0.15) / 0.17;
+      const startZ = 4.4 * distanceMult;
+      const endZ = isPortrait ? 3.3 : 1.6; // On mobile, zoom in without clipping through chest
+
       targetCamPos.set(
-        THREE.MathUtils.lerp(0, 0.1, p),
-        THREE.MathUtils.lerp(0, 0.2, p),
-        THREE.MathUtils.lerp(4.4, 1.6, p)
+        isPortrait ? 0 : THREE.MathUtils.lerp(0, 0.1, p),
+        isPortrait ? 0.3 : THREE.MathUtils.lerp(0, 0.2, p),
+        THREE.MathUtils.lerp(startZ, endZ, p)
       );
-      targetLookAt.set(0, 0.2, 0);
-      heroPos.set(0, 0, 0);
-      heroScale = 1;
-      heroRotY = p * 0.3;
+      targetLookAt.set(0, isPortrait ? 0.3 : 0.2, 0);
+      heroPos.set(0, isPortrait ? 0.35 : 0, 0);
+      heroScale = isPortrait ? 0.88 : 1;
+      heroRotY = p * 0.35;
     }
-    // Stage 3: Panel Opens (0.32 - 0.50) -> Shift garment left for unfolding card
+    // Stage 3: Panel Opens (0.32 - 0.50)
     else if (scrollProgress < 0.50) {
       const p = (scrollProgress - 0.32) / 0.18;
-      const offsetX = isMobile ? 0 : THREE.MathUtils.lerp(0, -1.2, p);
-      targetCamPos.set(0, 0.1, THREE.MathUtils.lerp(1.6, 3.4, p));
-      targetLookAt.set(offsetX * 0.3, 0.1, 0);
-      heroPos.set(offsetX, 0, 0);
-      heroScale = isMobile ? 0.85 : 1;
-      heroRotY = THREE.MathUtils.lerp(0.3, 0.6, p);
+      if (isPortrait) {
+        // On mobile: elevate garment smoothly into the upper half of screen
+        const posY = THREE.MathUtils.lerp(0.35, 1.25, p);
+        heroPos.set(0, posY, 0);
+        heroScale = THREE.MathUtils.lerp(0.88, 0.62, p);
+        targetCamPos.set(0, 0.35, THREE.MathUtils.lerp(3.3, 5.6, p));
+        targetLookAt.set(0, 0.35, 0);
+        heroRotY = THREE.MathUtils.lerp(0.35, 0.65, p);
+      } else {
+        // On desktop: shift garment left so the unfolding panel can occupy the right side
+        const offsetX = THREE.MathUtils.lerp(0, -1.2, p);
+        targetCamPos.set(0, 0.1, THREE.MathUtils.lerp(1.6, 3.4, p));
+        targetLookAt.set(offsetX * 0.3, 0.1, 0);
+        heroPos.set(offsetX, 0, 0);
+        heroScale = 1;
+        heroRotY = THREE.MathUtils.lerp(0.3, 0.6, p);
+      }
     }
     // Stage 4: Collection 3D Carousel (0.50 - 0.68)
     else if (scrollProgress < 0.68) {
       const p = (scrollProgress - 0.50) / 0.18;
-      targetCamPos.set(0, 0.3, THREE.MathUtils.lerp(3.4, 6.2, p));
+      const startCamZ = isPortrait ? 5.6 : 3.4;
+      const endCamZ = isPortrait ? 8.6 : 6.2;
+      targetCamPos.set(0, 0.3, THREE.MathUtils.lerp(startCamZ, endCamZ, p));
       targetLookAt.set(0, 0, 0);
-      heroPos.set(0, -10, 0); // Hide single hero garment, show carousel
+      heroPos.set(0, -15, 0); // Hide single hero garment, show carousel
     }
     // Stage 5: Technical Details 360° (0.68 - 0.85)
     else if (scrollProgress < 0.85) {
       const p = (scrollProgress - 0.68) / 0.17;
-      targetCamPos.set(
-        isMobile ? 0 : 0.8,
-        0.1,
-        3.1
-      );
-      targetLookAt.set(0, 0, 0);
-      heroPos.set(isMobile ? 0 : -0.7, 0, 0);
-      heroScale = 1.05;
+      if (isPortrait) {
+        targetCamPos.set(0, 0.3, 3.2 * distanceMult);
+        targetLookAt.set(0, 0.3, 0);
+        heroPos.set(0, 0.95, 0);
+        heroScale = 0.68;
+      } else {
+        targetCamPos.set(0.8, 0.1, 3.1);
+        targetLookAt.set(0, 0, 0);
+        heroPos.set(-0.7, 0, 0);
+        heroScale = 1.05;
+      }
       // Complete 360 degree rotation synchronized to scroll
       heroRotY = p * Math.PI * 2;
     }
@@ -109,13 +133,13 @@ const SceneRig: React.FC<SceneRigProps> = ({ scrollProgress }) => {
     else {
       const p = (scrollProgress - 0.85) / 0.15;
       targetCamPos.set(
-        THREE.MathUtils.lerp(0.8, 0, p),
-        THREE.MathUtils.lerp(0.1, 0.2, p),
-        THREE.MathUtils.lerp(3.1, 4.2, p)
+        isPortrait ? 0 : THREE.MathUtils.lerp(0.8, 0, p),
+        isPortrait ? 0.2 : THREE.MathUtils.lerp(0.1, 0.2, p),
+        THREE.MathUtils.lerp(3.2 * distanceMult, 4.4 * distanceMult, p)
       );
       targetLookAt.set(0, 0, 0);
-      heroPos.set(0, 0, 0);
-      heroScale = THREE.MathUtils.lerp(1.05, 0.95, p);
+      heroPos.set(0, isPortrait ? 0.25 : 0, 0);
+      heroScale = THREE.MathUtils.lerp(isPortrait ? 0.68 : 1.05, isPortrait ? 0.78 : 0.95, p);
       heroRotY = Math.PI * 2 + p * 0.5;
     }
 
@@ -132,15 +156,15 @@ const SceneRig: React.FC<SceneRigProps> = ({ scrollProgress }) => {
         heroRotY,
         factor
       );
-      // Mouse parallax tilt on X/Z
+      // Mouse/tilt parallax (gentle on mobile)
       heroGroupRef.current.rotation.x = THREE.MathUtils.lerp(
         heroGroupRef.current.rotation.x,
-        -pointer.y * 0.12,
+        -pointer.y * (isPortrait ? 0.05 : 0.12),
         factor
       );
       heroGroupRef.current.rotation.z = THREE.MathUtils.lerp(
         heroGroupRef.current.rotation.z,
-        -pointer.x * 0.08,
+        -pointer.x * (isPortrait ? 0.04 : 0.08),
         factor
       );
     }
@@ -192,12 +216,14 @@ interface SceneCanvasProps {
 export const SceneCanvas: React.FC<SceneCanvasProps> = ({ scrollProgress }) => {
   const { isInspectMode, isMobile } = useScene();
 
-  const isInteractive = isInspectMode || (scrollProgress >= 0.48 && scrollProgress <= 0.70);
+  // ONLY allow canvas to capture pointer events when user actively toggles 3D inspection mode!
+  // This guarantees touch gestures on mobile phones NEVER get trapped and animations scroll smoothly.
+  const isInteractive = isInspectMode;
 
   return (
     <div
       className={`fixed inset-0 z-0 transition-colors duration-700 ${
-        isInteractive ? 'pointer-events-auto' : 'pointer-events-none'
+        isInteractive ? 'pointer-events-auto touch-none' : 'pointer-events-none'
       }`}
     >
       <Canvas
@@ -209,7 +235,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({ scrollProgress }) => {
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.1,
         }}
-        shadows
+        shadows={!isMobile}
       >
         <Suspense fallback={null}>
           {/* Lighting Rig: Soft Key, Rim, and Fill */}
@@ -217,7 +243,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({ scrollProgress }) => {
           <directionalLight
             position={[4, 6, 4]}
             intensity={1.8}
-            castShadow
+            castShadow={!isMobile}
             shadow-mapSize={[1024, 1024]}
             shadow-bias={-0.0001}
           />
@@ -246,7 +272,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({ scrollProgress }) => {
             color="#000000"
           />
 
-          {/* Main 3D Rig */}
+          {/* Main 3D Rig with Responsive Aspect Scaling */}
           <SceneRig scrollProgress={scrollProgress} />
 
           {/* OrbitControls when user wants manual 3D drag inspection */}
@@ -261,7 +287,7 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({ scrollProgress }) => {
             />
           )}
 
-          {/* Post Processing: Subtle Bloom & Vignette for dark cinematic vibe */}
+          {/* Post Processing on Desktop */}
           {!isMobile && (
             <EffectComposer multisampling={0}>
               <Bloom

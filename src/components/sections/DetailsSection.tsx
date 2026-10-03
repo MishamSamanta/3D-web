@@ -8,7 +8,7 @@ export const DetailsSection: React.FC = () => {
   return (
     <section
       id="details-section"
-      className="relative min-h-[120vh] w-full flex flex-col justify-center px-6 sm:px-12 py-24 pointer-events-none select-none"
+      className="relative min-h-[120vh] w-full flex flex-col justify-center px-4 sm:px-12 pt-64 pb-20 sm:py-24 pointer-events-none select-none"
     >
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         {/* Left Column: Reserved for the 360° rotating 3D garment */}

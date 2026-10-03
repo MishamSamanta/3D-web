@@ -43,6 +43,8 @@ const CarouselItem: React.FC<CarouselItemProps> = ({ product, position, index })
     }
   };
 
+  const { isMobile } = useScene();
+
   return (
     <group
       position={position}
@@ -59,7 +61,7 @@ const CarouselItem: React.FC<CarouselItemProps> = ({ product, position, index })
       }}
     >
       <group ref={groupRef}>
-        <group scale={[0.65, 0.65, 0.65]}>
+        <group scale={isMobile ? [0.46, 0.46, 0.46] : [0.65, 0.65, 0.65]}>
           <GarmentModel
             modelPath={product.modelPath}
             activeColor={product.colors[0]}
@@ -90,9 +92,10 @@ const CarouselItem: React.FC<CarouselItemProps> = ({ product, position, index })
 
 export const CollectionCarousel3D: React.FC = () => {
   const carouselGroupRef = useRef<THREE.Group>(null);
+  const { isMobile } = useScene();
 
   // Position products horizontally spaced with slight arc
-  const spacing = 2.4;
+  const spacing = isMobile ? 1.55 : 2.4;
   const total = PRODUCTS.length;
   const startX = -((total - 1) * spacing) / 2;
 

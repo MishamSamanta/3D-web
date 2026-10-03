@@ -12,17 +12,17 @@ export const HeroSection: React.FC = () => {
   };
 
   return (
-    <section className="relative min-h-screen w-full flex flex-col justify-between items-center px-4 sm:px-8 py-24 select-none pointer-events-none">
+    <section className="relative min-h-[100svh] w-full flex flex-col justify-between items-center px-4 sm:px-8 pt-20 pb-8 sm:py-24 select-none pointer-events-none">
       {/* Huge Brand Typography in Background behind 3D Model */}
       <div className="absolute inset-0 flex items-center justify-center -z-10 overflow-hidden">
-        <h1 className="font-space font-bold text-[14vw] sm:text-[18vw] leading-none tracking-tighter text-white/[0.035] select-none uppercase pointer-events-none text-center">
+        <h1 className="font-space font-bold text-[20vw] sm:text-[18vw] leading-none tracking-tighter text-white/[0.035] select-none uppercase pointer-events-none text-center">
           NOVA
         </h1>
       </div>
 
       {/* Top telemetry header */}
-      <div className="w-full max-w-7xl flex items-center justify-between font-mono text-[10px] sm:text-xs text-techGray uppercase tracking-widest pt-4">
-        <div className="flex items-center gap-2">
+      <div className="w-full max-w-7xl flex items-center justify-between font-mono text-[9px] sm:text-xs text-techGray uppercase tracking-widest pt-2 sm:pt-4">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <span className="w-2 h-2 rounded-full bg-cyberLime animate-pulse" />
           <span>LIVE ARCHIVE 3D ENGINE</span>
         </div>
@@ -35,15 +35,15 @@ export const HeroSection: React.FC = () => {
       </div>
 
       {/* Center atmospheric tag */}
-      <div className="text-center max-w-2xl mt-auto mb-16 pointer-events-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card border border-white/10 text-slate-300 font-mono text-xs uppercase tracking-wider mb-4">
+      <div className="text-center max-w-2xl mt-auto mb-6 sm:mb-16 pointer-events-auto px-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card border border-white/10 text-slate-300 font-mono text-[10px] sm:text-xs uppercase tracking-wider mb-3">
           <Sparkles size={12} className="text-cyberLime" />
           <span>AUTONOMOUS CYBERNETIC COUTURE</span>
         </div>
-        <h2 className="font-space text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">
+        <h2 className="font-space text-2xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-2 sm:mb-4">
           ENGINEERED FOR THE DIGITAL ARCHIVE
         </h2>
-        <p className="font-inter text-sm sm:text-base text-slate-400 max-w-lg mx-auto font-light leading-relaxed">
+        <p className="font-inter text-xs sm:text-base text-slate-400 max-w-lg mx-auto font-light leading-relaxed">
           High-concept luxury streetwear sculpted in 3D. Explore the weight, anatomy, and technical craftsmanship below.
         </p>
       </div>
